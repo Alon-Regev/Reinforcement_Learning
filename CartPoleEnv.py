@@ -1,11 +1,11 @@
 from Environment import Environment
 import math
-# pygame
+import numpy as np
 import pygame
 
-g = 9.8
-L = 0.5
-a = 5
+g = 10
+L = 0.4
+a = 10
 
 class CartPoleEnv(Environment):
     def __init__(self):
@@ -14,22 +14,20 @@ class CartPoleEnv(Environment):
         # pygame winodw
         self.canvas = pygame.display.set_mode((600, 600))
 
-        self.angle = 0.0
+    def reset(self):
+        super().reset()
+        self.angle = np.random.random() / 100 - 0.005
         self.x_pos = 0.0
         self.x_vel = 0.0
         self.theta_vel = 0.0
-
-    def reset(self):
-        super().reset()
+        self.last_action = -1
 
     def update_state(self, action):
         dt = 1 / 30
-        if action < 1/3:
-            x_acc = -a
-        elif action < 2/3:
-            x_acc = 0
-        else:
-            x_acc = a
+        action = action * 2 - 1
+        action = sign(action) * abs(action) ** 0.25
+        self.last_action = action
+        x_acc = a * action
         self.x_vel += x_acc * dt
         self.x_pos += self.x_vel * dt
 
@@ -37,15 +35,25 @@ class CartPoleEnv(Environment):
         self.theta_vel += theta_acc * dt
         self.angle += self.theta_vel * dt
 
-    def current_state(self):
-        return [self.angle, self.x_vel]
+        if abs(self.angle) > math.pi / 6:
+            self.done = True
 
-    def rewards(self):
-        raise NotImplementedError
+    def current_state(self):
+        return np.array([self.angle, self.theta_vel, self.x_pos, self.x_vel])
 
     def render(self):
         self.canvas.fill((0, 0, 0))
-        position = (self.x_pos * 100 + 300, 300)
+        position = (self.x_pos * 10 + 300, 300)
         pygame.draw.circle(self.canvas, (255, 255, 255), position, 10)
         pygame.draw.line(self.canvas, (255, 255, 255), position, (position[0] - math.sin(self.angle) * L * 200, position[1] - math.cos(self.angle) * L * 200))
+        # draw arrow for last action
+        pygame.draw.line(
+            self.canvas, 
+            (255, 0, 0) if self.last_action > 0 else (0, 255, 0),
+            (position[0] + 10 * sign(self.last_action), position[1]), 
+            (position[0] + 10 * sign(self.last_action) + 50 * self.last_action, position[1]), width=2
+        )
         pygame.display.update()
+
+def sign(x):
+    return 1 if x > 0 else -1

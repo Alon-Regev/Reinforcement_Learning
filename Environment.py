@@ -5,6 +5,7 @@ class Environment:
     def reset(self):
         self.states = []
         self.actions = []
+        self.done = False
 
     def step(self, action):
         self.states.append(self.current_state())
@@ -15,9 +16,6 @@ class Environment:
         raise NotImplementedError
 
     def current_state(self):
-        raise NotImplementedError
-
-    def rewards(self):
         raise NotImplementedError
 
     def render(self):
