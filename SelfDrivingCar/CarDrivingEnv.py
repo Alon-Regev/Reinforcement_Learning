@@ -11,7 +11,7 @@ W = 25
 H = 50
 DT = 1 / 15
 
-SCREEN_WIDTH = 1200
+SCREEN_WIDTH = 1240
 SCREEN_HEIGHT = 640
 
 PATH_COLOR = (100, 60, 20)
@@ -37,6 +37,9 @@ class CarDrivingEnv(Environment):
 
         self.ray_angles = [math.radians(-45), 0, math.radians(45)]
         self.last_raycasts = [0, 0, 0]
+        self.plot = None
+        self.plot_width = None
+        self.quit = False
 
     def reset(self):
         super().reset()
@@ -151,15 +154,6 @@ class CarDrivingEnv(Environment):
         position = np.array([self.pos[0], self.pos[1]])
         self.angle *= -1
 
-        # draw text
-        font = pygame.font.SysFont("Arial", 20)
-        text = font.render(f"Score: {self.score():.2f}", True, (255, 255, 255))
-        text2 = font.render(f"Laps: {str(self.laps)} + {self.closest_index}/{len(self.path) - 1}", True, (255, 255, 255))
-        text3 = font.render(f"Gen: {gen}", True, (255, 255, 255))
-        self.canvas.blit(text, (10, 5))
-        self.canvas.blit(text2, (10, 25))
-        self.canvas.blit(text3, (SCREEN_WIDTH - 100, 5))
-
         # draw path
         for i in range(len(self.path) - 1):
             self.draw_thick_line(PATH_COLOR, self.path[i], self.path[i + 1], self.path_radius * 2)
@@ -200,12 +194,21 @@ class CarDrivingEnv(Environment):
         self.draw_rect((200, 200, 200), position + self.get_rotated_position(0, H / 2 - 18, self.angle), W, 14, self.angle)
         self.draw_rect((100, 100, 100), position + self.get_rotated_position(0, H / 2 - 18, self.angle), W - 5, 10, self.angle)
 
+        self.draw_graph()
+
+        # draw text
+        font = pygame.font.SysFont("Arial", 20)
+        text = font.render(f"Score: {self.score():.2f}", True, (255, 255, 255))
+        text2 = font.render(f"Laps: {str(self.laps)} + {self.closest_index}/{len(self.path) - 1}", True, (255, 255, 255))
+        text3 = font.render(f"Gen: {gen}", True, (255, 255, 255))
+        self.canvas.blit(text, (10, 5))
+        self.canvas.blit(text2, (10, 25))
+        self.canvas.blit(text3, (SCREEN_WIDTH - 100, 5))
+
         self.angle *= -1
         pygame.display.update()
 
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
+        self.pygame_event_update()
 
     def render_progress(self, done, total):
         pygame.draw.rect(self.canvas, (0, 0, 0), (SCREEN_WIDTH - 200, SCREEN_HEIGHT - 50, 250, 50))
@@ -217,9 +220,24 @@ class CarDrivingEnv(Environment):
         pygame.draw.rect(self.canvas, (255, 255, 255), (SCREEN_WIDTH - 250, SCREEN_HEIGHT - 20, 250 * done / total, 20))
         pygame.display.update()
 
+        self.pygame_event_update()
+
+    def pygame_event_update(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                running = False
+                self.quit = True
+
+    def draw_graph(self, data=None):
+        """
+        draws graph on screen
+        input: data - tuple (image bytes, (width, height))
+        """
+        if data is not None:
+            self.plot = pygame.image.fromstring(data[0], data[1], "RGB")
+            self.plot_width = data[1][0]
+        if self.plot is None:
+            return
+        self.canvas.blit(self.plot, (SCREEN_WIDTH - self.plot_width, 0))
 
     def draw_rect(self, color, pos, w, h, angle):
         corner_positions = [(w/2, h/2), (-w/2, h/2), (-w/2, -h/2), (w/2, -h/2)]

@@ -2,7 +2,7 @@ from CarDrivingEnv import CarDrivingEnv
 import time
 from NeuralNetwork import NeuralNetwork, sigmoid, sigmoid_derivative
 import copy
-import matplotlib.pyplot as plt
+from Plot import plot_to_image
 
 TOP_NETWORKS = 4
 SIZE = TOP_NETWORKS * 3    # 300
@@ -10,21 +10,30 @@ gen = 0
 
 def main():
     global gen
+    top_scores = []
     env = CarDrivingEnv()
     networks = []
     for _ in range(SIZE):
         networks.append(new_net())
 
-    for _ in range(SIZE):
+    while not env.quit:
         # run
         for i, network in enumerate(networks):
             run_network(env, network)
             env.reset()
             env.render_progress(i + 1, SIZE)
+            if env.quit:
+                break
+        if env.quit:
+            break
 
         # get top networks
         top_networks = sorted(networks, key=lambda x: x.score, reverse=True)[:TOP_NETWORKS]
+        top_scores.append(top_networks[0].score)
         run_network(env, top_networks[0], True)
+
+        # plot scores
+        env.draw_graph(plot_to_image(top_scores))
 
         # reproduce
         networks = copy.deepcopy(top_networks)
@@ -50,11 +59,11 @@ def run_network(env, network, render=False):
         if render:
             env.render(gen=gen)
             time.sleep(1 / 60)
+            if env.quit:
+                break
         t += 1
     network.score += env.score()
     env.reset()
-    if render:
-        print(network.score)
 
 if __name__ == "__main__":
     main()
