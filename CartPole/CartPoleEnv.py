@@ -7,7 +7,7 @@ g = 10
 L = 0.4
 a = 10
 
-class CarDrivingEnv(Environment):
+class CartPoleEnv(Environment):
     def __init__(self):
         super().__init__()
 

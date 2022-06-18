@@ -8,8 +8,8 @@ class NeuralNetwork():
         self.weights = []
         self.biases = []
         for i in range(self.layer_count):
-            self.weights.append(np.random.rand(layers_sizes[i], layers_sizes[i + 1]) / 5 - 0.1)
-            self.biases.append(np.random.rand(layers_sizes[i + 1]) / 5 - 0.1)
+            self.weights.append(np.random.rand(layers_sizes[i], layers_sizes[i + 1]) - 0.5)
+            self.biases.append(np.random.rand(layers_sizes[i + 1]) - 0.5)
         self.activation_functions = activation_functions[0]
         self.activation_derivatives = activation_functions[1]
 
